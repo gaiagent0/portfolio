@@ -1,0 +1,51 @@
+---
+title: "Smart Router: Hogyan válasszon AI modellt automatikusan?"
+description: "Bemutatom a saját routing rendszeremet, amely automatikusan kiválasztja a legolcsóbb megfelelő Qwen modellt minden feladathoz – 0 Ft infrastruktúra költséggel."
+pubDate: "2025-07-28"
+tags: ["AI", "Python", "Alibaba Cloud", "Qwen"]
+readingTime: 6
+aiGenerated: false
+aiReviewed: false
+---
+
+Az AI API-k használatának legnagyobb csapdája: mindig a legnagyobb (legdrágább) modellt hívjuk, mert "biztonságos".
+
+Egy egyszerű kérdésre – "Mi a REST API?" – ugyanolyan modellt küldünk, mint egy 3000 szavas üzleti stratégia elemzésre. Ez felesleges.
+
+## A megoldás: routing döntési fa
+
+A rendszer két lépésben működik:
+
+1. **Osztályozás** – `qwen-flash` (~50 token, 0.3s) eldönti melyik kategória
+2. **Végrehajtás** – a megfelelő modell elvégzi a munkát
+
+```python
+# Egyszerű routing logika
+MODELS = {
+    "tool_faq_meta": "qwen-flash",                   # ~150 tok
+    "blog_howto":    "qwen3-30b-a3b-instruct-2507",  # ~600 tok
+    "pillar_deep":   "qwen3-235b-a22b-instruct-2507",# ~4k tok
+    "code_demo":     "qwen3-coder-plus-2025-07-22",  # ~800 tok
+}
+```
+
+## Hard rules: mikor ne kérdezze meg az AI-t?
+
+A legtanulságosabb felfedezés: bizonyos esetekben felesleges a classifiert hívni.
+
+Ha a kérésben szerepel "röviden", "3 mondatban", vagy a szöveg rövidebb 60 karakternél – automatikusan `qwen-flash` kapja a feladatot. **0 extra API hívás, 0 extra token.**
+
+```python
+SHORT_KEYWORDS = ["röviden", "brief", "3 mondatban", "tldr"]
+
+def apply_hard_rules(text):
+    if any(kw in text.lower() for kw in SHORT_KEYWORDS):
+        return {"category": "tool_faq_meta", "complexity": "low"}
+    return None
+```
+
+## Eredmény
+
+3 demón mérve: 2889 token összesen, ami az 1 milliós ingyenes kvóta **0.29%-a**. Ez ~345 ilyen session-t jelent lejáratig.
+
+A teljes kód elérhető GitHubon.

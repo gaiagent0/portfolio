@@ -1,0 +1,153 @@
+---
+// src/pages/index.astro
+import Base from "../layouts/Base.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("blog"))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+
+const projects = [
+  {
+    title:  "AI Content Pipeline",
+    desc:   "Qwen modell alapú tartalom generáló – Astro + Cloudflare Pages deploy.",
+    stack:  ["Python", "Qwen API", "Astro"],
+    href:   "https://github.com/yourhandle/ai-pipeline",
+    status: "Élő",
+  },
+  {
+    title:  "Smart Router",
+    desc:   "Intelligens modell-routing 0 Ft infrastruktúra költséggel, ingyenes AI kvótán.",
+    stack:  ["Python", "OpenAI SDK", "Alibaba Cloud"],
+    href:   "https://github.com/yourhandle/smart-router",
+    status: "Open source",
+  },
+  {
+    title:  "Portfolio Site",
+    desc:   "Ez az oldal. SSG, zero JS, 100/100 Lighthouse, Cloudflare CDN.",
+    stack:  ["Astro 5", "Tailwind", "Cloudflare"],
+    href:   "#",
+    status: "Ez az oldal",
+  },
+];
+---
+
+<Base
+  title="Főoldal"
+  description="Szoftverfejlesztő portfólió – AI integráció, full-stack fejlesztés, nyílt forráskódú projektek."
+>
+
+  <!-- Hero -->
+  <section class="max-w-5xl mx-auto px-6 pt-24 pb-20">
+    <div class="max-w-2xl">
+      <p class="text-accent font-mono text-sm mb-4 tracking-widest uppercase">
+        Szoftverfejlesztő · AI integráció
+      </p>
+      <h1 class="font-display text-5xl sm:text-6xl leading-tight mb-6">
+        Kódot írok,<br />
+        <em class="not-italic text-accent">AI-t integrálok</em>,<br />
+        dolgokat megoldok.
+      </h1>
+      <p class="text-lg text-muted leading-relaxed mb-10 max-w-xl">
+        Full-stack fejlesztő Budapestről. Hobbi projekteken keresztül
+        tanulom a legjobb gyakorlatokat – és itt osztom meg, amit megtalálok.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <a
+          href="/projektek"
+          class="px-6 py-3 bg-accent text-white font-body font-medium rounded-sm hover:bg-accent/90 transition-colors"
+        >
+          Projektek →
+        </a>
+        <a
+          href="/blog"
+          class="px-6 py-3 border border-ink/20 dark:border-paper/20 rounded-sm hover:border-accent hover:text-accent transition-colors"
+        >
+          Blog
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Divider -->
+  <div class="max-w-5xl mx-auto px-6">
+    <hr class="border-ink/10 dark:border-paper/10" />
+  </div>
+
+  <!-- Featured posts -->
+  <section class="max-w-5xl mx-auto px-6 py-20">
+    <div class="flex items-baseline justify-between mb-10">
+      <h2 class="font-display text-3xl">Legújabb írások</h2>
+      <a href="/blog" class="text-sm text-accent hover:underline">Összes →</a>
+    </div>
+
+    {posts.length === 0 ? (
+      <p class="text-muted">Hamarosan érkeznek az első bejegyzések.</p>
+    ) : (
+      <div class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        {posts.map((post) => (
+          <article class="group">
+            <a href={`/blog/${post.slug}`} class="block">
+              <div class="aspect-[16/9] bg-ink/5 dark:bg-paper/5 rounded-sm mb-4 overflow-hidden">
+                {post.data.heroImage && (
+                  <img
+                    src={post.data.heroImage}
+                    alt={post.data.title}
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                )}
+              </div>
+              <div class="flex gap-2 flex-wrap mb-2">
+                {post.data.tags?.map((tag: string) => (
+                  <span class="text-xs font-mono text-accent">{tag}</span>
+                ))}
+              </div>
+              <h3 class="font-display text-xl mb-2 group-hover:text-accent transition-colors leading-snug">
+                {post.data.title}
+              </h3>
+              <p class="text-sm text-muted line-clamp-2">{post.data.description}</p>
+              <p class="text-xs text-muted/60 mt-3 font-mono">
+                {post.data.pubDate.toLocaleDateString("hu-HU", {
+                  year: "numeric", month: "long", day: "numeric"
+                })}
+                {post.data.readingTime && ` · ${post.data.readingTime} perc`}
+              </p>
+            </a>
+          </article>
+        ))}
+      </div>
+    )}
+  </section>
+
+  <!-- Projects -->
+  <section class="bg-ink dark:bg-paper/5 py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="font-display text-3xl text-paper dark:text-paper mb-10">Projektek</h2>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {projects.map((p) => (
+          <a
+            href={p.href}
+            target={p.href !== "#" ? "_blank" : undefined}
+            rel="noopener"
+            class="group block p-6 border border-paper/10 dark:border-paper/10 rounded-sm hover:border-accent transition-colors"
+          >
+            <div class="flex items-start justify-between mb-3">
+              <span class="text-xs font-mono text-accent/80 uppercase tracking-wider">{p.status}</span>
+              <span class="text-paper/30 group-hover:text-accent transition-colors">↗</span>
+            </div>
+            <h3 class="font-display text-xl text-paper mb-2">{p.title}</h3>
+            <p class="text-sm text-paper/60 mb-4 leading-relaxed">{p.desc}</p>
+            <div class="flex flex-wrap gap-2">
+              {p.stack.map((s) => (
+                <span class="text-xs font-mono text-paper/40 border border-paper/10 px-2 py-0.5 rounded-sm">
+                  {s}
+                </span>
+              ))}
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+</Base>

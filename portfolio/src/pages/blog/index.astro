@@ -1,0 +1,113 @@
+---
+// src/pages/blog/index.astro
+import Base from "../../layouts/Base.astro";
+import { getCollection } from "astro:content";
+
+const allPosts = (await getCollection("blog"))
+  .filter(p => !p.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+// Összes tag összegyűjtve
+const allTags = [...new Set(allPosts.flatMap(p => p.data.tags))].sort();
+---
+
+<Base
+  title="Blog"
+  description="Cikkek szoftverfejlesztésről, AI integrációról és produktivitásról."
+>
+  <div class="max-w-5xl mx-auto px-6 py-20">
+
+    <div class="mb-16">
+      <h1 class="font-display text-5xl mb-4">Blog</h1>
+      <p class="text-muted text-lg">
+        Fejlesztési tapasztalatok, AI kísérletek, tanulságok.
+      </p>
+    </div>
+
+    <!-- Tag szűrő -->
+    {allTags.length > 0 && (
+      <div class="flex flex-wrap gap-2 mb-12" id="tag-filters">
+        <button
+          data-tag="all"
+          class="tag-btn active text-sm font-mono px-3 py-1 border border-ink/20 dark:border-paper/20 rounded-sm hover:border-accent hover:text-accent transition-colors data-[active]:border-accent data-[active]:text-accent"
+        >
+          Összes ({allPosts.length})
+        </button>
+        {allTags.map(tag => (
+          <button
+            data-tag={tag}
+            class="tag-btn text-sm font-mono px-3 py-1 border border-ink/20 dark:border-paper/20 rounded-sm hover:border-accent hover:text-accent transition-colors"
+          >
+            {tag} ({allPosts.filter(p => p.data.tags.includes(tag)).length})
+          </button>
+        ))}
+      </div>
+    )}
+
+    <!-- Post lista -->
+    <div class="space-y-0" id="post-list">
+      {allPosts.map((post) => (
+        <article
+          class="post-item group border-t border-ink/10 dark:border-paper/10 py-8"
+          data-tags={JSON.stringify(post.data.tags)}
+        >
+          <a href={`/blog/${post.slug}`} class="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-8">
+            <time
+              datetime={post.data.pubDate.toISOString()}
+              class="text-sm font-mono text-muted shrink-0 pt-1 min-w-[7rem]"
+            >
+              {post.data.pubDate.toLocaleDateString("hu-HU", {
+                year: "numeric", month: "short", day: "numeric"
+              })}
+            </time>
+            <div class="flex-1">
+              <div class="flex flex-wrap gap-2 mb-2">
+                {post.data.tags.map(tag => (
+                  <span class="text-xs font-mono text-accent">{tag}</span>
+                ))}
+                {post.data.aiGenerated && (
+                  <span class="text-xs font-mono text-muted border border-muted/30 px-1.5 py-0.5 rounded-sm">
+                    AI-asszisztált
+                  </span>
+                )}
+              </div>
+              <h2 class="font-display text-2xl mb-2 group-hover:text-accent transition-colors">
+                {post.data.title}
+              </h2>
+              <p class="text-muted text-sm leading-relaxed line-clamp-2">
+                {post.data.description}
+              </p>
+              {post.data.readingTime && (
+                <p class="text-xs text-muted/60 font-mono mt-2">{post.data.readingTime} perces olvasás</p>
+              )}
+            </div>
+          </a>
+        </article>
+      ))}
+      <div class="border-t border-ink/10 dark:border-paper/10" />
+    </div>
+
+  </div>
+</Base>
+
+<script>
+  // Tag szűrő kliens oldali JS (zero external deps)
+  const btns  = document.querySelectorAll<HTMLButtonElement>(".tag-btn");
+  const items = document.querySelectorAll<HTMLElement>(".post-item");
+
+  btns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const tag = btn.dataset.tag!;
+
+      // Active state
+      btns.forEach(b => b.removeAttribute("data-active"));
+      btn.setAttribute("data-active", "");
+
+      // Filter
+      items.forEach(item => {
+        const tags: string[] = JSON.parse(item.dataset.tags || "[]");
+        item.style.display = (tag === "all" || tags.includes(tag)) ? "" : "none";
+      });
+    });
+  });
+</script>
